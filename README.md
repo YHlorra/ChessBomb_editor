@@ -183,17 +183,8 @@ mypy *.py
 
 本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
-## 🔗 相关链接
-
-- **项目主页**: https://github.com/YHlorra/ChessBomb_editor
-- **问题反馈**: https://github.com/YHlorra/ChessBomb_editor/issues
-- **详细文档**: 查看 `docs/` 目录下的完整文档
-- **作者博客**: [博客地址](http://47.120.61.192/index.php/2025/03/27/%e6%b8%b8%e6%88%8f%e3%80%8achessbomb%e3%80%8b%e8%a7%a3%e5%af%86%e5%b7%a5%e5%85%b7/)
-
 ## 📞 支持
-
 如果您在使用过程中遇到问题：
-
 1. 📖 首先查阅[安装文档](docs/installation.md)和[常见问题](docs/troubleshooting.md)
 2. 🔍 在[Issues](https://github.com/YHlorra/ChessBomb_editor/issues)中搜索相似问题
 3. 🐛 创建新的Issue并提供详细信息
