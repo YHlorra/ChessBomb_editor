@@ -1,5 +1,5 @@
-# Chess Bomb Editor
-Vibe Coding测试项目
+# Vibe Coding测试项目
+ChessBomb_editor  
 一个使用ALNS算法和优化界面设计的象棋炸弹谜题求解器，帮助玩家解决游戏卡关问题。
 
 ![界面示意图](https://my-buxket.oss-cn-beijing.aliyuncs.com/QQ%E5%9B%BE%E7%89%8720250327144722.png)
