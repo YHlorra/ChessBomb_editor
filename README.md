@@ -1,5 +1,4 @@
-# Chess Bomb Editor v2.0.1
-
+# Vibe Coding测试项目 - Chess Bomb Editor v2.0.1
 一个使用ALNS算法和优化界面设计的象棋炸弹谜题求解器，帮助玩家解决游戏卡关问题。
 
 ![界面示意图](https://my-buxket.oss-cn-beijing.aliyuncs.com/QQ%E5%9B%BE%E7%89%8720250327144722.png)
@@ -24,18 +23,7 @@
 - **可视化棋盘**: 实时显示棋子放置过程，直观理解解决方案
 - **导出功能**: 支持导出为文本文件、JSON格式，一键复制到剪贴板
 
-### ⚙️ 灵活配置
-- **骷髅类型**: 白色骷髅(1HP)、灰色骷髅(2HP)、首领骷髅(3HP)
-- **棋子类型**: 支持所有标准国际象棋棋子(皇后、战车、主教、骑士、国王、士兵)
-- **可调参数**: ALNS求解时间限制、束搜索宽度、界面显示设置
-
 ## 📦 安装说明
-
-### 系统要求
-- Python 3.8 或更高版本
-- 512MB 内存
-- 100MB 可用磁盘空间
-
 ### 快速安装
 
 ```bash
@@ -159,6 +147,7 @@ mypy *.py
 - 🎨 UI/UX优化
 - ⚡ 性能优化
 
+<<<<<<< HEAD
 ## 📈 更新日志
 
 ### v2.0.0 (最新版本)
@@ -173,6 +162,8 @@ mypy *.py
 - 简单Pygame界面
 - 基本求解功能
 
+=======
+>>>>>>> 1187005f5328365a934a0ca736a8c624a2143f10
 ## 🙏 致谢
 
 - **棋子素材**: 感谢 [lichess.org](https://github.com/lichess-org/lila) 提供的优质棋子素材
@@ -182,13 +173,6 @@ mypy *.py
 ## 📄 许可证
 
 本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
-## 🔗 相关链接
-
-- **项目主页**: https://github.com/YHlorra/ChessBomb_editor
-- **问题反馈**: https://github.com/YHlorra/ChessBomb_editor/issues
-- **详细文档**: 查看 `docs/` 目录下的完整文档
-- **作者博客**: [博客地址](http://47.120.61.192/index.php/2025/03/27/%e6%b8%b8%e6%88%8f%e3%80%8achessbomb%e3%80%8b%e8%a7%a3%e5%af%86%e5%b7%a5%e5%85%b7/)
 
 ## 📞 支持
 
