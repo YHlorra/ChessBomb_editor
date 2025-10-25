@@ -7,7 +7,7 @@ import pygame
 import os
 import threading
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk
 import numpy as np
 from config import (
     FONT_PATH, PIECES_PATH, SKULL_PATH,
@@ -49,7 +49,7 @@ class BoardEditor:
         # Load fonts
         try:
             self.font = pygame.font.Font(f"{FONT_PATH}/simsun.ttc", DEFAULT_FONT_SIZE)
-            self.title_font = pygame.font.Font(f"{FONT_PATH}/simsun.ttc", TITLE_FONT_SIZE, bold=True)
+            self.title_font = pygame.font.Font(f"{FONT_PATH}/simsun.ttc", TITLE_FONT_SIZE)
         except:
             self.font = pygame.font.Font(None, DEFAULT_FONT_SIZE)
             self.title_font = pygame.font.Font(None, TITLE_FONT_SIZE)
@@ -97,8 +97,8 @@ class BoardEditor:
                     self.skull_images[skull_type] = pygame.transform.scale(
                         img, (CELL_SIZE - 12, CELL_SIZE - 12)
                     )
-        except Exception as e:
-            print(f"加载骷髅图像时出错: {e}")
+        except Exception:
+            pass
 
         # Load piece images
         self.piece_images = {}
@@ -116,8 +116,8 @@ class BoardEditor:
                 if os.path.exists(path):
                     img = pygame.image.load(path)
                     self.piece_images[piece_type] = pygame.transform.scale(img, (24, 24))
-        except Exception as e:
-            print(f"加载棋子图像时出错: {e}")
+        except Exception:
+            pass
 
     def draw_board(self):
         """Draw the chess board with enhanced visual design"""
@@ -203,14 +203,7 @@ class BoardEditor:
                         highlight_pos = (rect.centerx - CELL_SIZE // 8, rect.centery - CELL_SIZE // 8)
                         pygame.draw.circle(self.screen, WHITE, highlight_pos, CELL_SIZE // 12)
 
-                    # Enhanced skull health display
-                    hp_bg = pygame.Rect(rect.centerx - 12, rect.centery - 12, 24, 20)
-                    pygame.draw.rect(self.screen, WHITE, hp_bg, border_radius=4)
-                    pygame.draw.rect(self.screen, BLACK, hp_bg, 1, border_radius=4)
-                    
-                    hp_text = self.font.render(str(skull_type), True, BLACK)
-                    text_rect = hp_text.get_rect(center=hp_bg.center)
-                    self.screen.blit(hp_text, text_rect)
+                    # 移除骷髅生命值显示
 
     def draw_skull_selector(self):
         """Draw enhanced skull type selector"""
@@ -228,9 +221,9 @@ class BoardEditor:
         self.screen.blit(selector_title, title_rect)
 
         skull_options = [
-            ("白色骷髅 (1HP)", WHITE_SKULL, LIGHT_GRAY),
-            ("灰色骷髅 (2HP)", GRAY_SKULL, GRAY),
-            ("首领骷髅 (3HP)", BOSS_SKULL, DARK_GRAY)
+            ("白色骷髅", WHITE_SKULL, LIGHT_GRAY),
+            ("灰色骷髅", GRAY_SKULL, GRAY),
+            ("首领骷髅", BOSS_SKULL, DARK_GRAY)
         ]
 
         for i, (name, sk_type, bg_color) in enumerate(skull_options):
@@ -267,9 +260,7 @@ class BoardEditor:
             text = self.font.render(name, True, BLACK)
             self.screen.blit(text, (option_rect.x + 28, option_rect.y + 2))
             
-            # Add HP indicator
-            hp_text = self.font.render(f"HP: {sk_type}", True, DARK_GRAY)
-            self.screen.blit(hp_text, (option_rect.x + 220, option_rect.y + 2))
+            # 移除HP指示器
 
     def draw_piece_editor(self):
         """Draw enhanced piece count editor"""
@@ -319,7 +310,7 @@ class BoardEditor:
             # Enhanced piece image with glow
             piece_rect = pygame.Rect(row_rect.x + 8, row_rect.y + 4, 24, 24)
             if piece_type in self.piece_images:
-                img = pygame.piece_images[piece_type]
+                img = self.piece_images[piece_type]
                 self.screen.blit(img, piece_rect)
             else:
                 # Draw piece symbol
@@ -331,9 +322,6 @@ class BoardEditor:
             # Enhanced piece name and value
             name_text = self.font.render(name, True, BLACK)
             self.screen.blit(name_text, (row_rect.x + 40, row_rect.y + 2))
-            
-            value_text = self.font.render(f"值:{value}", True, DARK_GRAY)
-            self.screen.blit(value_text, (row_rect.x + 40, row_rect.y + 16))
 
             # Enhanced count display with background
             count_bg = pygame.Rect(row_rect.x + 150, row_rect.y + 4, 40, 24)
@@ -617,14 +605,21 @@ class BoardEditor:
                 solution = solve_with_alns(initial_state, max_iterations=1000, time_limit=30)
 
                 if solution:
-                    print("\n最终解决方案:")
-                    formatted_solution = format_solution(solution)
-                    for step in formatted_solution:
-                        print(f"步骤 {step['step']}: 在 {step['position']} 放置 {step['piece']}")
-                    
-                    self.solution = solution
-                    self.solution_ready = True
-                    self.info_messages = [step['notation'] for step in formatted_solution[:10]]
+                    try:
+                        formatted_solution = format_solution(solution)
+                        # 计算棋子使用统计
+                        piece_counts = {}
+                        for step in formatted_solution:
+                            piece = step['piece']
+                            piece_counts[piece] = piece_counts.get(piece, 0) + 1
+                        
+                        self.solution = solution
+                        self.solution_ready = True
+                        self.formatted_solution = formatted_solution
+                        # 使用增强的描述信息
+                        self.info_messages = [step['description'] for step in formatted_solution[:10]]
+                    except Exception as format_error:
+                        self.solution_message = f"格式化解决方案错误: {str(format_error)}"
                 else:
                     self.solution_message = "未找到解决方案"
                     
@@ -640,7 +635,8 @@ class BoardEditor:
     def show_solution_window(self):
         """Show solution window"""
         if self.solution:
-            SolutionWindow(self.tk_root, self.solution)
+            # 创建可以独立操作的解决方案窗口
+            solution_window = SolutionWindow(self.tk_root, self.solution)
             self.tk_root.update()
 
     def run(self):
@@ -689,13 +685,25 @@ class BoardEditor:
 
 
 class SolutionWindow:
-    """Enhanced solution display window using Tkinter"""
+    """独立的解决方案显示窗口，可以独立于主界面进行关闭和最小化"""
     
     def __init__(self, parent, solution):
+        # 创建窗口
         self.window = tk.Toplevel(parent)
-        self.window.title("解决方案详情")
+        self.window.title("Chess Bomb - 解决方案详情")
         self.window.geometry("800x600")
+        
+        # 确保窗口可以独立操作
+        self.window.transient(None)  # 不绑定到父窗口
+        
+        # 确保最小化和关闭按钮正常工作
+        self.window.attributes('-topmost', False)  # 不总是显示在顶部
+        
+        # 绑定关闭事件处理
         self.window.protocol("WM_DELETE_WINDOW", self.on_close)
+        
+        # 确保不阻塞主窗口
+        self.window.grab_release()
         
         self.solution = solution
         self.current_step = 0
@@ -720,10 +728,6 @@ class SolutionWindow:
         # Insert solution content
         self._display_solution()
 
-        # Center window on parent
-        self.window.transient(parent)
-        self.window.grab_set()
-
     def _create_header(self, parent):
         """Create header section with solution summary"""
         header_frame = ttk.LabelFrame(parent, text="解决方案摘要", padding="10")
@@ -741,67 +745,30 @@ class SolutionWindow:
         summary_text += "  |  ".join([f"{piece}: {count}" for piece, count in piece_counts.items()])
         
         ttk.Label(header_frame, text=summary_text, font=('Arial', 11, 'bold')).pack()
-        
-        # Quality indicator
-        if total_moves <= 10:
-            quality = "优秀 ⭐⭐⭐"
-            color = "green"
-        elif total_moves <= 15:
-            quality = "良好 ⭐⭐"
-            color = "orange"
-        else:
-            quality = "一般 ⭐"
-            color = "red"
-            
-        ttk.Label(header_frame, text=f"解决方案质量: {quality}", 
-                 font=('Arial', 10), foreground=color).pack(pady=(5, 0))
-
     def _create_navigation(self, parent):
-        """Create navigation controls"""
+        """Create minimal navigation controls"""
         nav_frame = ttk.Frame(parent)
         nav_frame.pack(fill=tk.X, pady=(0, 10))
         
-        # Step counter
-        self.step_label = ttk.Label(nav_frame, text="", font=('Arial', 10))
-        self.step_label.pack(side=tk.LEFT, padx=(0, 10))
-        
-        # Navigation buttons
-        ttk.Button(nav_frame, text="◀ 上一步", command=self._prev_step).pack(side=tk.LEFT, padx=2)
-        ttk.Button(nav_frame, text="下一步 ▶", command=self._next_step).pack(side=tk.LEFT, padx=2)
-        ttk.Button(nav_frame, text="自动播放", command=self._auto_play).pack(side=tk.LEFT, padx=2)
-        
-        # Speed control
-        ttk.Label(nav_frame, text="播放速度:").pack(side=tk.LEFT, padx=(20, 5))
-        self.speed_var = tk.StringVar(value="1.0")
-        speed_combo = ttk.Combobox(nav_frame, textvariable=self.speed_var, 
-                                   values=["0.5", "1.0", "1.5", "2.0"], width=5)
-        speed_combo.pack(side=tk.LEFT)
-        speed_combo.set("1.0")
-        
-        self._update_step_display()
+        # Only keep basic info label
+        ttk.Label(nav_frame, text="解决方案详情", font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=(0, 10))
 
     def _create_content_area(self, parent):
-        """Create content area with tabs"""
+        """Create content area with only detailed steps"""
         content_frame = ttk.Frame(parent)
         content_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
         
-        # Create notebook for tabs
+        # Create notebook for tabs (keep the structure but only one tab)
         self.notebook = ttk.Notebook(content_frame)
         self.notebook.pack(fill=tk.BOTH, expand=True)
         
-        # Tab 1: Detailed steps
+        # Only keep detailed steps tab
         self._create_steps_tab()
-        
-        # Tab 2: Chess board visualization
-        self._create_board_tab()
-        
-        # Tab 3: Statistics
-        self._create_stats_tab()
 
     def _create_steps_tab(self):
         """Create detailed steps tab"""
         steps_frame = ttk.Frame(self.notebook)
-        self.notebook.add(steps_frame, text="详细步骤")
+        self.notebook.add(steps_frame, text="解决方案")
         
         # Create text widget with scrollbar
         text_container = ttk.Frame(steps_frame)
@@ -819,277 +786,89 @@ class SolutionWindow:
         self.output_text.tag_configure('step', font=('Arial', 10, 'bold'), foreground='#2980b9')
         self.output_text.tag_configure('position', font=('Consolas', 10, 'bold'), foreground='#27ae60')
         self.output_text.tag_configure('piece', font=('Arial', 10), foreground='#8e44ad')
-        self.output_text.tag_configure('current', background='#fff3cd', border=1, relief='solid')
         
-        # Bind mouse events for step highlighting
-        self.output_text.bind("<Button-1>", self._on_step_click)
+        # Only keep mousewheel event for scrolling
         self.output_text.bind("<MouseWheel>", self._on_mousewheel)
 
-    def _create_board_tab(self):
-        """Create chess board visualization tab"""
-        board_frame = ttk.Frame(self.notebook)
-        self.notebook.add(board_frame, text="棋盘视图")
-        
-        # Create canvas for board display
-        canvas_frame = ttk.Frame(board_frame)
-        canvas_frame.pack(fill=tk.BOTH, expand=True)
-        
-        self.board_canvas = tk.Canvas(canvas_frame, bg='white', width=400, height=400)
-        self.board_canvas.pack(side=tk.LEFT, padx=10, pady=10)
-        
-        # Create step info panel
-        info_frame = ttk.LabelFrame(board_frame, text="当前步骤信息", padding="10")
-        info_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=10, pady=10)
-        
-        self.step_info_text = tk.Text(info_frame, width=30, height=15, font=('Arial', 10))
-        info_scrollbar = ttk.Scrollbar(info_frame, command=self.step_info_text.yview)
-        self.step_info_text.configure(yscrollcommand=info_scrollbar.set)
-        
-        self.step_info_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        info_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        # Draw initial board
-        self._draw_board()
 
-    def _create_stats_tab(self):
-        """Create statistics tab"""
-        stats_frame = ttk.Frame(self.notebook)
-        self.notebook.add(stats_frame, text="统计分析")
+
+    def _create_footer(self, parent):
+        """Create minimal footer with only close button"""
+        footer_frame = ttk.Frame(parent)
+        footer_frame.pack(fill=tk.X)
         
-        # Create statistics display
-        stats_container = ttk.Frame(stats_frame, padding="20")
-        stats_container.pack(fill=tk.BOTH, expand=True)
+        # Only keep close button centered
+        ttk.Button(footer_frame, text="关闭", command=self.on_close, width=15).pack(side=tk.RIGHT, padx=10, pady=5)
+
+    def _display_solution(self):
+        """Display the complete solution with improved readability"""
+        self.output_text.delete(1.0, tk.END)
         
-        # Piece usage statistics
-        piece_frame = ttk.LabelFrame(stats_container, text="棋子使用统计", padding="10")
-        piece_frame.pack(fill=tk.X, pady=(0, 10))
+        # 添加更多的文本标签样式
+        self.output_text.tag_configure('success', font=('Arial', 10), foreground='#27ae60')
+        self.output_text.tag_configure('info', font=('Arial', 10), foreground='#3498db')
+        self.output_text.tag_configure('description', font=('Arial', 10), foreground='#2c3e50')
+        self.output_text.tag_configure('symbol', font=('Arial', 12))
         
+        # 插入标题和摘要
+        self.output_text.insert(tk.END, "🏆 Chess Bomb 解决方案 🏆\n\n", 'header')
+        self.output_text.insert(tk.END, f"📝 使用 ALNS 算法生成的最优解\n", 'info')
+        
+        # 解决方案统计信息
+        total_moves = len(self.formatted_solution)
         piece_counts = {}
         for step in self.formatted_solution:
             piece = step['piece']
             piece_counts[piece] = piece_counts.get(piece, 0) + 1
         
+        self.output_text.insert(tk.END, f"🔢 总步数: {total_moves} 步\n", 'info')
+        
+        # 棋子使用统计
+        self.output_text.insert(tk.END, f"\n🧩 棋子使用统计:\n", 'info')
         for piece, count in sorted(piece_counts.items()):
-            ttk.Label(piece_frame, text=f"{piece}: {count} 个", 
-                     font=('Arial', 10)).pack(anchor=tk.W)
+            piece_symbol = next((s for s, p in {'👑':'皇后', '🚗':'战车', '🛐':'主教', '🐎':'骑士', '⚔️':'士兵'}.items() if p == piece), '')
+            self.output_text.insert(tk.END, f"  {piece_symbol} {piece}: {count} 个\n", 'description')
         
-        # Position analysis
-        position_frame = ttk.LabelFrame(stats_container, text="位置分布", padding="10")
-        position_frame.pack(fill=tk.X, pady=(0, 10))
+        # 分隔线
+        self.output_text.insert(tk.END, "\n" + "="*60 + "\n\n", 'info')
         
-        file_counts = {}
-        rank_counts = {}
-        for step in self.formatted_solution:
-            pos = step['position']
-            file_counts[pos[0]] = file_counts.get(pos[0], 0) + 1
-            rank_counts[pos[1:]] = rank_counts.get(pos[1:], 0) + 1
+        # 详细步骤列表（表格形式）
+        self.output_text.insert(tk.END, f"📋 解决方案步骤:\n\n", 'header')
         
-        ttk.Label(position_frame, text="文件分布: " + ", ".join([f"{file}:{count}" for file, count in sorted(file_counts.items())]),
-                 font=('Arial', 10)).pack(anchor=tk.W)
-        ttk.Label(position_frame, text="横排分布: " + ", ".join([f"{rank}:{count}" for rank, count in sorted(rank_counts.items())]),
-                 font=('Arial', 10)).pack(anchor=tk.W)
-
-    def _create_footer(self, parent):
-        """Create footer with export options"""
-        footer_frame = ttk.Frame(parent)
-        footer_frame.pack(fill=tk.X)
+        # 表头
+        self.output_text.insert(tk.END, f"{'步骤':^8}  {'棋子':^12}  {'位置':^8}  {'移动说明':^25}\n", 'info')
+        self.output_text.insert(tk.END, f"{'-'*8}  {'-'*12}  {'-'*8}  {'-'*25}\n", 'info')
         
-        ttk.Button(footer_frame, text="导出为文本", command=self._export_text).pack(side=tk.LEFT, padx=2)
-        ttk.Button(footer_frame, text="导出为JSON", command=self._export_json).pack(side=tk.LEFT, padx=2)
-        ttk.Button(footer_frame, text="复制到剪贴板", command=self._copy_to_clipboard).pack(side=tk.LEFT, padx=2)
-        ttk.Button(footer_frame, text="关闭", command=self.on_close).pack(side=tk.RIGHT, padx=2)
-
-    def _display_solution(self):
-        """Display the complete solution"""
-        self.output_text.delete(1.0, tk.END)
-        
-        # Insert header
-        self.output_text.insert(tk.END, "🏆 Chess Bomb 解决方案 🏆\n\n", 'header')
-        self.output_text.insert(tk.END, f"使用 ALNS 算法生成的最优解\n", 'header')
-        self.output_text.insert(tk.END, f"总步数: {len(self.formatted_solution)} 步\n\n", 'header')
-        
-        # Insert steps with formatting
+        # 步骤内容
         for i, step in enumerate(self.formatted_solution):
-            step_text = f"步骤 {step['step']:2d}: "
-            self.output_text.insert(tk.END, step_text, 'step')
+            step_line = f"{step['step']:^8}  {step['symbol']} {step['piece'][:5]:<8}  {step['position']:^8}  {step['description']:^25}\n"
             
-            pos_text = f"{step['position']}"
-            self.output_text.insert(tk.END, "位置 ", '')
-            self.output_text.insert(tk.END, pos_text, 'position')
-            
-            piece_text = f" 放置 {step['piece']}\n"
-            self.output_text.insert(tk.END, piece_text, 'piece')
-            
-            # Store step position for highlighting
-            start_idx = self.output_text.index(f"{i + 4}.0")
-            end_idx = self.output_text.index(f"{i + 4}.end")
-            self.step_positions = getattr(self, 'step_positions', {})
-            self.step_positions[i] = (start_idx, end_idx)
+            if i > 0 and (i + 1) % 10 == 0 and i < len(self.formatted_solution) - 1:
+                self.output_text.insert(tk.END, step_line, 'description')
+                self.output_text.insert(tk.END, f"{'-'*8}  {'-'*12}  {'-'*8}  {'-'*25}\n", 'info')
+            else:
+                self.output_text.insert(tk.END, step_line, 'description')
         
         self.output_text.config(state='disabled')
 
-    def _draw_board(self):
-        """Draw chess board with current step highlighted"""
-        self.board_canvas.delete("all")
-        
-        board_size = 360
-        cell_size = board_size // 8
-        
-        # Draw board
-        for row in range(8):
-            for col in range(8):
-                x1 = col * cell_size
-                y1 = row * cell_size
-                x2 = x1 + cell_size
-                y2 = y1 + cell_size
-                
-                # Checkerboard pattern
-                color = '#f0d9b5' if (row + col) % 2 == 0 else '#b58863'
-                self.board_canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline='black')
-                
-                # Add coordinates
-                if col == 0:
-                    self.board_canvas.create_text(x1 - 10, y1 + cell_size//2, 
-                                                text=str(8-row), font=('Arial', 8))
-                if row == 7:
-                    self.board_canvas.create_text(x1 + cell_size//2, y2 + 10, 
-                                                text=chr(97 + col), font=('Arial', 8))
-        
-        # Draw pieces up to current step
-        for i in range(min(self.current_step, len(self.formatted_solution))):
-            step = self.formatted_solution[i]
-            pos = step['position']
-            col = ord(pos[0]) - 97
-            row = 8 - int(pos[1:])
-            
-            x = col * cell_size + cell_size // 2
-            y = row * cell_size + cell_size // 2
-            
-            # Draw piece
-            self.board_canvas.create_oval(x-15, y-15, x+15, y+15, 
-                                        fill='#4a90e2', outline='#2c3e50', width=2)
-            self.board_canvas.create_text(x, y, text=step['piece'][0], 
-                                        font=('Arial', 12, 'bold'), fill='white')
+
 
     def _update_step_display(self):
-        """Update step display and board"""
-        if not self.formatted_solution:
-            return
-            
-        self.step_label.config(text=f"步骤: {self.current_step + 1} / {len(self.formatted_solution)}")
-        
-        # Update step info
-        if hasattr(self, 'step_info_text'):
-            self.step_info_text.delete(1.0, tk.END)
-            if self.current_step < len(self.formatted_solution):
-                step = self.formatted_solution[self.current_step]
-                info = f"步骤 {step['step']}\n"
-                info += f"棋子: {step['piece']}\n"
-                info += f"位置: {step['position']}\n"
-                info += f"记号: {step['notation']}\n\n"
-                
-                # Add move description
-                info += "移动说明:\n"
-                info += f"在棋盘位置 {step['position']} 放置 {step['piece']}。\n"
-                
-                self.step_info_text.insert(1.0, info)
-        
-        # Highlight current step in text
-        if hasattr(self, 'output_text') and hasattr(self, 'step_positions'):
-            self.output_text.tag_remove('current', 1.0, tk.END)
-            if self.current_step in self.step_positions:
-                start, end = self.step_positions[self.current_step]
-                self.output_text.tag_add('current', start, end)
-                self.output_text.see(start)
-        
-        # Update board
-        if hasattr(self, 'board_canvas'):
-            self._draw_board()
+        """Simplified update method - no step navigation needed"""
+        pass
 
-    def _prev_step(self):
-        """Go to previous step"""
-        if self.current_step > 0:
-            self.current_step -= 1
-            self._update_step_display()
 
-    def _next_step(self):
-        """Go to next step"""
-        if self.current_step < len(self.formatted_solution) - 1:
-            self.current_step += 1
-            self._update_step_display()
 
-    def _auto_play(self):
-        """Auto-play solution"""
-        if hasattr(self, 'auto_playing') and self.auto_playing:
-            self.auto_playing = False
-            return
-            
-        self.auto_playing = True
-        self._play_next()
 
-    def _play_next(self):
-        """Play next step in auto-play"""
-        if not hasattr(self, 'auto_playing') or not self.auto_playing:
-            return
-            
-        if self.current_step < len(self.formatted_solution) - 1:
-            self.current_step += 1
-            self._update_step_display()
-            speed = float(self.speed_var.get())
-            delay = int(1000 / speed)  # Convert speed to delay
-            self.window.after(delay, self._play_next)
-        else:
-            self.auto_playing = False
-
-    def _on_step_click(self, event):
-        """Handle step click to jump to that step"""
-        index = self.output_text.index(f"@{event.x},{event.y}")
-        line = int(index.split('.')[0])
-        
-        # Calculate step number (account for header lines)
-        step_num = line - 4
-        if 0 <= step_num < len(self.formatted_solution):
-            self.current_step = step_num
-            self._update_step_display()
-
-    def _export_text(self):
-        """Export solution as text file"""
-        filename = filedialog.asksaveasfilename(
-            defaultextension=".txt",
-            filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
-        )
-        if filename:
-            with open(filename, 'w', encoding='utf-8') as f:
-                f.write("Chess Bomb 解决方案\n")
-                f.write("=" * 50 + "\n\n")
-                for step in self.formatted_solution:
-                    f.write(f"步骤{step['step']}: {step['notation']}\n")
-            messagebox.showinfo("导出成功", f"解决方案已导出到: {filename}")
-
-    def _export_json(self):
-        """Export solution as JSON file"""
-        import json
-        filename = filedialog.asksaveasfilename(
-            defaultextension=".json",
-            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
-        )
-        if filename:
-            with open(filename, 'w', encoding='utf-8') as f:
-                json.dump(self.formatted_solution, f, ensure_ascii=False, indent=2)
-            messagebox.showinfo("导出成功", f"解决方案已导出到: {filename}")
-
-    def _copy_to_clipboard(self):
-        """Copy solution to clipboard"""
-        solution_text = "\n".join([f"步骤{step['step']}: {step['notation']}" 
-                                  for step in self.formatted_solution])
-        self.window.clipboard_clear()
-        self.window.clipboard_append(solution_text)
-        messagebox.showinfo("复制成功", "解决方案已复制到剪贴板")
 
     def _on_mousewheel(self, event):
         """Handle mouse wheel scrolling"""
         self.output_text.yview_scroll(-1 * (event.delta // 120), "units")
 
     def on_close(self):
-        """Handle window close"""
-        self.window.destroy()
+        """关闭窗口并释放资源"""
+        try:
+            self.window.destroy()
+        except:
+            # 忽略已经被销毁或其他异常情况
+            pass

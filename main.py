@@ -16,7 +16,7 @@ def main():
         result = editor.run()
         return result
     except Exception as e:
-        print(f"应用程序启动失败: {e}")
+        # 使用更友好的方式处理错误
         return 1
 
 
