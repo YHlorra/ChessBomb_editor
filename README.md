@@ -162,8 +162,6 @@ mypy *.py
 - 简单Pygame界面
 - 基本求解功能
 
-=======
->>>>>>> 1187005f5328365a934a0ca736a8c624a2143f10
 ## 🙏 致谢
 
 - **棋子素材**: 感谢 [lichess.org](https://github.com/lichess-org/lila) 提供的优质棋子素材
